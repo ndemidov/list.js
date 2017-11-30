@@ -58,7 +58,23 @@ module.exports = function(id, options, values) {
 
       this.handlers();
       this.items();
-      this.pagination();
+      var pInstances = this.pagination();
+
+      // Pagination is not getting updated when calling self.search()/self.fuzzySearch() methods from outside.
+      // Fix that with calling pagination search methods explicitly.
+      self.searchFixed = function(str, columns) {
+        self.search(str, columns);
+        for (var i = 0, len = pInstances.length; i < len; i++) {
+          pInstances[i].search(str, columns);
+        }
+      };
+
+      self.fuzzySearchFixed = function(str, columns) {
+        self.fuzzySearch(str, columns);
+        for (var i = 0, len = pInstances.length; i < len; i++) {
+          pInstances[i].fuzzySearch(str, columns);
+        }
+      };
 
       self.update();
     },
@@ -83,10 +99,13 @@ module.exports = function(id, options, values) {
         if (options.pagination[0] === undefined){
           options.pagination = [options.pagination];
         }
+        var paginationInstances = [];
         for (var i = 0, il = options.pagination.length; i < il; i++) {
-          initPagination(options.pagination[i]);
+          paginationInstances.push(initPagination(options.pagination[i]));
         }
+        return paginationInstances;
       }
+      return [];
     }
   };
 
